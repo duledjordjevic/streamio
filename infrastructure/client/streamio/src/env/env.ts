@@ -1,5 +1,5 @@
 
-const apiGateway: string = "cp3qf817ol"
+const apiGateway: string = "5vob62mih1"
 
 export const environment = {
     imageBase64:  'data:image/jpeg;base64,',

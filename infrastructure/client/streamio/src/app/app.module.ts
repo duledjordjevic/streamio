@@ -17,8 +17,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: 'eu-central-1_QCJqZH9gR',
-      userPoolClientId: 'jnuaqlhr1kb416ikofua705iv'
+      userPoolId: 'eu-central-1_hQcscgTyb',
+      userPoolClientId: '73nel6ltn34q3uc50d8semid'
     }
   }
 });

@@ -10,6 +10,7 @@ import { DatabaseStack } from '../lib/database-stack';
 import { NotificationStack } from '../lib/stacks/notification-stack';
 import { LikesStack } from '../lib/stacks/likes-stack';
 import { FeedStack } from '../lib/stacks/feed-stack';
+import { CicdStack } from '../lib/cicd-stack';
 
 const app = new cdk.App();
 
@@ -58,5 +59,7 @@ new FeedStack(app, 'FeedStack', {
 	history: database.history,
 	feed: database.feed
 });
+
+new CicdStack(app, 'CicdStack');
 
 app.synth();
