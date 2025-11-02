@@ -14,6 +14,7 @@ interface LambdaStackProps extends cdk.StackProps {
     bucket: s3.Bucket;
     metadata: dynamodb.TableV2;
     history: dynamodb.TableV2;
+    stageName?: string;
 }
 
 export class LambdaStack extends cdk.Stack {
