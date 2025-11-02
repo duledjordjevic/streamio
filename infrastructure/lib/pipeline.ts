@@ -18,28 +18,30 @@ export class PipelineStage extends Stage {
     constructor(scope: Construct, id: string, props: StageProps) {
         super(scope, id, props);
 
-        this.storage = new StorageStack(this, 'StorageStack');
-        this.database = new DatabaseStack(this, 'DatabaseStack');
+        this.storage = new StorageStack(this, 'StorageStack', props);
+        this.database = new DatabaseStack(this, 'DatabaseStack', props);
 
 
-        new LambdaStack(this, 'LambdaStack', {
+        // new LambdaStack(this, 'LambdaStack', {
+        //     bucket: this.storage.bucket,
+        //     metadata: this.database.metadata,
+        //     history: this.database.history,
+        //     stageName: props?.stageName
+        // })
+
+        const apigateway = new LambdaStack(this, 'ApiGatewayStack', {
             bucket: this.storage.bucket,
             metadata: this.database.metadata,
             history: this.database.history,
             stageName: props?.stageName
         })
 
-        const apigateway = new LambdaStack(this, 'TestStack', {
-            bucket: this.storage.bucket,
-            metadata: this.database.metadata,
-            history: this.database.history
-        })
-
-        new SecurityStack(this, 'SecurityStack');
+        new SecurityStack(this, 'SecurityStack', props);
 
         new TranscoderStack(this, 'TranscoderStack', {
             bucketName: this.storage.bucket.bucketName,
-            metadata: this.database.metadata
+            metadata: this.database.metadata,
+            stageName: props?.stageName
         });
         // new AngularStack(app, 'AngularStack');
 
@@ -47,13 +49,15 @@ export class PipelineStage extends Stage {
             api: apigateway.api,
             httpAuthorizer: apigateway.httpAuthorizer,
             metadata: this.database.metadata,
-            subscriptions: this.database.subscriptions
+            subscriptions: this.database.subscriptions,
+            stageName: props?.stageName
         });
 
         new LikesStack(this, 'LikesStack', {
             api: apigateway.api,
             httpAuthorizer: apigateway.httpAuthorizer,
-            likes: this.database.likes
+            likes: this.database.likes,
+            stageName: props?.stageName
         });
 
         new FeedStack(this, 'FeedStack', {
@@ -63,7 +67,8 @@ export class PipelineStage extends Stage {
             subscriptions: this.database.subscriptions,
             likes: this.database.likes,
             history: this.database.history,
-            feed: this.database.feed
+            feed: this.database.feed,
+            stageName: props?.stageName
         });
     }
 }

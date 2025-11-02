@@ -13,21 +13,24 @@ import { Transcoder } from './constructs/transcoder-construct';
 interface TranscoderStackProps extends cdk.StackProps {
     bucketName: string;
     metadata: dynamodb.TableV2;
+    stageName?: string;
 }
 
 export class TranscoderStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: TranscoderStackProps) {
         super(scope, id, props);
 
+        const prefix = props && props.stageName ? `${props.stageName}-` : '';
+
         const bucket = s3.Bucket.fromBucketName(this, 'ImportedBucket', props.bucketName);
 
-        const dlQueue = new sqs.Queue(this, 'TranscoderDLQueue', {
+        const dlQueue = new sqs.Queue(this, `${prefix}TranscoderDLQueue`, {
             queueName: 'transcoder-dl-queue',
             encryption: sqs.QueueEncryption.KMS_MANAGED,
             enforceSSL: true,
         })
 
-        const transcoderQueue = new sqs.Queue(this, 'TranscoderQueue', {
+        const transcoderQueue = new sqs.Queue(this, `${prefix}TranscoderQueue`, {
             queueName: 'transcoder-queue',
             encryption: sqs.QueueEncryption.KMS_MANAGED,
             enforceSSL: true,
@@ -37,7 +40,7 @@ export class TranscoderStack extends cdk.Stack {
             }
         })
 
-        const addToQueue = new lambda.Function(this, 'AddToQueue', {
+        const addToQueue = new lambda.Function(this, `${prefix}AddToQueue`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'on_s3_object_put.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
@@ -58,7 +61,7 @@ export class TranscoderStack extends cdk.Stack {
 
         transcoderQueue.grantSendMessages(addToQueue);
 
-        new Transcoder(this, 'TranscoderConstruct', {
+        new Transcoder(this, `${prefix}TranscoderConstruct`, {
             bucket: bucket,
             queue: transcoderQueue
         })

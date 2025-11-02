@@ -2,6 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb'
 
+export interface DatabaseStackProps extends cdk.StackProps {
+    stageName?: string;
+}
+
 export class DatabaseStack extends cdk.Stack {
 
     public readonly metadata: dynamodb.TableV2;
@@ -10,11 +14,13 @@ export class DatabaseStack extends cdk.Stack {
     public readonly likes: dynamodb.TableV2;
     public readonly feed: dynamodb.TableV2;
 
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: Construct, id: string, props?: DatabaseStackProps) {
         super(scope, id, props);
 
+        const prefix = props && props.stageName ? `${props.stageName}-` : '';
+
         this.metadata = new dynamodb.TableV2(this, 'MoviesMetadataTable', {
-            tableName: "Metadata",
+            tableName: `${prefix}Metadata`,
             partitionKey: { name: 'directory', type: dynamodb.AttributeType.STRING },
             sortKey: { name: 'resolution', type: dynamodb.AttributeType.STRING },
             dynamoStream: dynamodb.StreamViewType.NEW_IMAGE,
@@ -85,7 +91,7 @@ export class DatabaseStack extends cdk.Stack {
         });
 
         this.history = new dynamodb.TableV2(this, 'WatchHistoryTable', {
-            tableName: "WatchHistory",
+            tableName: `${prefix}WatchHistory`,
             partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
             sortKey: { name: 'timestamp', type: dynamodb.AttributeType.STRING },
             dynamoStream: dynamodb.StreamViewType.NEW_IMAGE,
@@ -107,7 +113,7 @@ export class DatabaseStack extends cdk.Stack {
         });
 
         this.subscriptions = new dynamodb.TableV2(this, 'SubscriptionsTable', {
-            tableName: "Subscriptions",
+            tableName: `${prefix}Subscriptions`,
             partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
             dynamoStream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
             globalSecondaryIndexes: [
@@ -128,7 +134,7 @@ export class DatabaseStack extends cdk.Stack {
         });
 
         this.likes = new dynamodb.TableV2(this, 'LikesTable', {
-            tableName: "Likes",
+            tableName: `${prefix}Likes`,
             partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
             sortKey: { name: 'directory', type: dynamodb.AttributeType.STRING },
             dynamoStream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
@@ -136,7 +142,7 @@ export class DatabaseStack extends cdk.Stack {
         });
 
         this.feed = new dynamodb.TableV2(this, 'FeedTable', {
-            tableName: "Feed",
+            tableName: `${prefix}Feed`,
             partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
             sortKey: { name: 'category', type: dynamodb.AttributeType.STRING },
             dynamoStream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,

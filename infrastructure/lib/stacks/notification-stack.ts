@@ -15,13 +15,16 @@ interface NotificationStackProps extends cdk.StackProps {
     httpAuthorizer: lambdaAuthorizers.HttpLambdaAuthorizer;
     metadata: dynamodb.TableV2;
     subscriptions: dynamodb.TableV2;
+    stageName?: string;
 }
 
 export class NotificationStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: NotificationStackProps) {
         super(scope, id, props);
 
-        const streamProcessor = new lambda.Function(this, 'StreamProcessor', {
+        const prefix = props && props.stageName ? `${props.stageName}-` : '';
+
+        const streamProcessor = new lambda.Function(this, `${prefix}StreamProcessor`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'notification_processor.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/event-invoked')),
@@ -50,7 +53,7 @@ export class NotificationStack extends cdk.Stack {
 
         streamProcessor.addToRolePolicy(snsListAndPublishTopicsPolicy);
 
-        const subProcessor = new lambda.Function(this, 'SubProcessor', {
+        const subProcessor = new lambda.Function(this, `${prefix}SubProcessor`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'subscription_processor.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/event-invoked')),
@@ -82,7 +85,7 @@ export class NotificationStack extends cdk.Stack {
 
         subProcessor.addToRolePolicy(snsSubUnsubTopicsPolicy);
 
-        const postSubscription = new lambda.Function(this, 'PostSubscriptionLambda', {
+        const postSubscription = new lambda.Function(this, `${prefix}PostSubscriptionLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'post_subscription.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/subscription-endpoints')),
@@ -94,7 +97,7 @@ export class NotificationStack extends cdk.Stack {
         props.subscriptions.grantWriteData(postSubscription);
 
         const postMovieIntegration = new HttpLambdaIntegration(
-            "PostSubscription",
+            `${prefix}PostSubscription`,
             postSubscription
         );
         props.api.addRoutes({
@@ -104,7 +107,7 @@ export class NotificationStack extends cdk.Stack {
             authorizer: props.httpAuthorizer,
         });
 
-        const putSubscription = new lambda.Function(this, 'PutSubscriptionLambda', {
+        const putSubscription = new lambda.Function(this, `${prefix}PutSubscriptionLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'put_subscription.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/subscription-endpoints')),
@@ -116,7 +119,7 @@ export class NotificationStack extends cdk.Stack {
         props.subscriptions.grantWriteData(putSubscription);
 
         const putMovieIntegration = new HttpLambdaIntegration(
-            "PutSubscription",
+            `${prefix}PutSubscription`,
             putSubscription
         );
         props.api.addRoutes({
@@ -126,7 +129,7 @@ export class NotificationStack extends cdk.Stack {
             authorizer: props.httpAuthorizer,
         });
 
-        const getSubscription = new lambda.Function(this, 'GetSubscriptionLambda', {
+        const getSubscription = new lambda.Function(this, `${prefix}GetSubscriptionLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'get_subscription.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/subscription-endpoints')),
@@ -138,7 +141,7 @@ export class NotificationStack extends cdk.Stack {
         props.subscriptions.grantReadData(getSubscription);
 
         const getMovieIntegration = new HttpLambdaIntegration(
-            "GetSubscription",
+            `${prefix}GetSubscription`,
             getSubscription
         );
         props.api.addRoutes({
@@ -148,14 +151,14 @@ export class NotificationStack extends cdk.Stack {
             authorizer: props.httpAuthorizer,
         });
 
-        const getTopics = new lambda.Function(this, 'GetTopicsLambda', {
+        const getTopics = new lambda.Function(this, `${prefix}GetTopicsLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'get_topics.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/subscription-endpoints'))
         });
 
         const getTopicsIntegration = new HttpLambdaIntegration(
-            "GetTopics",
+            `${prefix}GetTopics`,
             getTopics
         );
         props.api.addRoutes({
