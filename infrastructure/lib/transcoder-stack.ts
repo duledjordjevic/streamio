@@ -25,13 +25,13 @@ export class TranscoderStack extends cdk.Stack {
         const bucket = s3.Bucket.fromBucketName(this, 'ImportedBucket', props.bucketName);
 
         const dlQueue = new sqs.Queue(this, `${prefix}TranscoderDLQueue`, {
-            queueName: 'transcoder-dl-queue',
+            queueName: `${prefix}transcoder-dl-queue`,
             encryption: sqs.QueueEncryption.KMS_MANAGED,
             enforceSSL: true,
         })
 
         const transcoderQueue = new sqs.Queue(this, `${prefix}TranscoderQueue`, {
-            queueName: 'transcoder-queue',
+            queueName: `${prefix}transcoder-queue`,
             encryption: sqs.QueueEncryption.KMS_MANAGED,
             enforceSSL: true,
             deadLetterQueue: {
