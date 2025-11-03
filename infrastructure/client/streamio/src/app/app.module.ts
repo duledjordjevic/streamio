@@ -12,13 +12,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MovieModule } from './movie/movie.module';
 import { SharedModule } from './shared/shared.module';
 import { ReactiveFormsModule } from '@angular/forms';
-
+import { environment } from 'src/env/env';
 
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: 'eu-central-1_lOu2AS24O',
-      userPoolClientId: '5bs5fv8vqsjqct8sfddb5miq1v'
+      userPoolId: environment.USER_POOL_ID,
+      userPoolClientId: environment.USER_POOL_CLIENT_ID
     }
   }
 });

@@ -21,6 +21,8 @@ interface AngularConstructProps {
    * e.g. "./demo-angular-app"
    */
   readonly relativeAngularPath: string;
+  readonly stageName?: string;
+  readonly appConfig?: { [key: string]: string };
 }
 
 export class AngularConstruct extends Construct {
@@ -98,6 +100,11 @@ export class AngularConstruct extends Construct {
                 spawnSync(
                   [
                     `cd ${props.relativeAngularPath}`,
+                    `cat > src/env/env.ts <<'EOF'\nexport const environment = ${JSON.stringify({
+                      production: true,
+                      stage: props.stageName,
+                      ...(props.appConfig || {})
+                    }, null, 2)};\nEOF`,
                     `npm ci`,
                     `npm run build -- -c ${props.buildConfiguration} --output-path ${outputDir}`,
                   ].join(" && "),

@@ -8,6 +8,7 @@ import { LikesStack } from "./stacks/likes-stack";
 import { NotificationStack } from "./stacks/notification-stack";
 import { StorageStack } from "./storage-stack";
 import { TranscoderStack } from "./transcoder-stack";
+import { AngularStack } from "./stacks/angular-stack";
 
 
 
@@ -22,15 +23,6 @@ export class PipelineStage extends Stage {
         this.database = new DatabaseStack(this, 'DatabaseStack', props);
 
         const securityStack = new SecurityStack(this, 'SecurityStack', props);
-
-        new LambdaStack(this, 'LambdaStack', {
-            bucket: this.storage.bucket,
-            metadata: this.database.metadata,
-            history: this.database.history,
-            stageName: props?.stageName,
-            userPoolId: securityStack.cognitoPool.userPool.userPoolId,
-            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId
-        })
 
         const apigateway = new LambdaStack(this, 'ApiGatewayStack', {
             bucket: this.storage.bucket,
@@ -47,7 +39,15 @@ export class PipelineStage extends Stage {
             metadata: this.database.metadata,
             stageName: props?.stageName
         });
-        // new AngularStack(app, 'AngularStack');
+        new AngularStack(this, 'AngularStack', {
+            stageName: props?.stageName,
+            appConfig: {
+                API: apigateway.api.apiEndpoint ?? `https://${apigateway.api.apiId}.execute-api.${this.region}.amazonaws.com`,
+                USER_POOL_ID: securityStack.cognitoPool.userPool.userPoolId,
+                USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId,
+                STAGE: props?.stageName ?? 'dev'
+            }
+        });
 
         new NotificationStack(this, 'NotificationStack', {
             api: apigateway.api,
