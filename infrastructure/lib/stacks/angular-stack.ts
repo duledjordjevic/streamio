@@ -4,7 +4,7 @@ import { AngularConstruct } from "../constructs/angular-construct";
 
 export interface AngularStackProps extends cdk.StackProps {
   readonly stageName?: string;
-  readonly appConfig?: { [key: string]: string };
+  readonly appConfig?: { API : string; USER_POOL_ID: string; USER_POOL_CLIENT_ID: string; STAGE: string };
 }
 export class AngularStack extends cdk.Stack {
   public readonly distributionDomainName: string;
