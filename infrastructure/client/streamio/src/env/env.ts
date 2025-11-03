@@ -1,9 +1,9 @@
 
-const apiGateway: string = "5vob62mih1"
+const apiGateway: string = "t87zqb2ac7"
 
 export const environment = {
     imageBase64:  'data:image/jpeg;base64,',
-    userPoolId: 'eu-central-1_YJgBxTfaY',
+    userPoolId: 'eu-central-1_lOu2AS24O',
     userPoolWebClientId: '',
     getUploadUrl: `https://${apiGateway}.execute-api.eu-central-1.amazonaws.com/upload-url`,
     getMovie: `https://${apiGateway}.execute-api.eu-central-1.amazonaws.com/get-movie`,

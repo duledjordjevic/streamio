@@ -9,13 +9,17 @@ export interface SecurityStackProps extends cdk.StackProps {
 }
 
 export class SecurityStack extends cdk.Stack {
+    public readonly cognitoPool: CognitoPool;
+
     constructor(scope: Construct, id: string, props?: SecurityStackProps) {
         super(scope, id, props);
 
         const stageName = props?.stageName ? props.stageName : 'dev';
 
-        new CognitoPool(this, `${stageName}-CognitoPool`, {
+        const cognitoPool = new CognitoPool(this, `${stageName}-CognitoPool`, {
             stage: stageName
         });
+
+        this.cognitoPool = cognitoPool;
     }
 }

@@ -15,6 +15,8 @@ interface LambdaStackProps extends cdk.StackProps {
     metadata: dynamodb.TableV2;
     history: dynamodb.TableV2;
     stageName?: string;
+    userPoolId?: string;
+    userPoolClientId?: string;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -39,7 +41,11 @@ export class LambdaStack extends cdk.Stack {
             handler: 'authorizer.handler',
             timeout: cdk.Duration.seconds(10),
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
-            layers: [authorizerLayer]
+            layers: [authorizerLayer],
+            environment: {
+                USER_POOL_ID: props.userPoolId ?? '',
+                CLIENT_ID: props.userPoolClientId ?? ''
+            }
         });
 
         this.api = new apigatewayv2.HttpApi(this, `${prefix}StreamioApi`, {

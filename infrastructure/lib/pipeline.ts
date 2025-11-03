@@ -21,22 +21,26 @@ export class PipelineStage extends Stage {
         this.storage = new StorageStack(this, 'StorageStack', props);
         this.database = new DatabaseStack(this, 'DatabaseStack', props);
 
+        const securityStack = new SecurityStack(this, 'SecurityStack', props);
 
-        // new LambdaStack(this, 'LambdaStack', {
-        //     bucket: this.storage.bucket,
-        //     metadata: this.database.metadata,
-        //     history: this.database.history,
-        //     stageName: props?.stageName
-        // })
+        new LambdaStack(this, 'LambdaStack', {
+            bucket: this.storage.bucket,
+            metadata: this.database.metadata,
+            history: this.database.history,
+            stageName: props?.stageName,
+            userPoolId: securityStack.cognitoPool.userPool.userPoolId,
+            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId
+        })
 
         const apigateway = new LambdaStack(this, 'ApiGatewayStack', {
             bucket: this.storage.bucket,
             metadata: this.database.metadata,
             history: this.database.history,
-            stageName: props?.stageName
+            stageName: props?.stageName,
+            userPoolId: securityStack.cognitoPool.userPool.userPoolId,
+            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId
         })
-
-        new SecurityStack(this, 'SecurityStack', props);
+        
 
         new TranscoderStack(this, 'TranscoderStack', {
             bucketName: this.storage.bucket.bucketName,
