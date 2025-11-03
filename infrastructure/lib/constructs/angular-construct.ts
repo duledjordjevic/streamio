@@ -7,6 +7,8 @@ import {
   CfnOutput,
 } from "aws-cdk-lib";
 import { spawnSync } from "child_process";
+import * as fs from "fs";
+import * as path from "path";
 
 interface AngularConstructProps {
   /**
@@ -86,12 +88,6 @@ export class AngularConstruct extends Construct {
     webAppBucket: s3.IBucket,
     webDistribution: cloudfront.CloudFrontWebDistribution
   ) {
-    const envJson = JSON.stringify({
-      production: true,
-      stage: props.stageName,
-      ...(props.appConfig || {})
-    }, null, 2).replace(/"/g, '\\"');
-
     new s3Deployment.BucketDeployment(this, "AngularAppDeployment", {
       destinationBucket: webAppBucket,
       sources: [
@@ -108,10 +104,24 @@ export class AngularConstruct extends Construct {
                 } catch {
                   return false;
                 }
+
+                const envFilePath = path.join(props.relativeAngularPath, "src/env/env.ts");
+                fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+
+                const envObject = {
+                  production: true,
+                  stage: props.stageName ?? "dev",
+                  ...(props.appConfig || {}),
+                };
+
+                fs.writeFileSync(
+                  envFilePath,
+                  `export const environment = ${JSON.stringify(envObject, null, 2)};`,
+                  { encoding: "utf8" }
+                );
                 spawnSync(
                   [
                     `cd ${props.relativeAngularPath}`,
-                    `printf "export const environment = %s;" '${envJson}' > src/env/env.ts`,
                     `npm ci`,
                     `npm run build -- -c ${props.buildConfiguration} --output-path ${outputDir}`,
                   ].join(" && "),
