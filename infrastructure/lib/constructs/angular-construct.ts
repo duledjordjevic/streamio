@@ -88,6 +88,13 @@ export class AngularConstruct extends Construct {
     webAppBucket: s3.IBucket,
     webDistribution: cloudfront.CloudFrontWebDistribution
   ) {
+    const configContent = {
+      API: props.appConfig?.API || '',
+      USER_POOL_ID: props.appConfig?.USER_POOL_ID || '',
+      USER_POOL_CLIENT_ID: props.appConfig?.USER_POOL_CLIENT_ID || '',
+      STAGE: props.appConfig?.STAGE || 'dev',
+    };
+
     new s3Deployment.BucketDeployment(this, "AngularAppDeployment", {
       destinationBucket: webAppBucket,
       sources: [
@@ -104,21 +111,6 @@ export class AngularConstruct extends Construct {
                 } catch {
                   return false;
                 }
-
-                const envFilePath = path.join(props.relativeAngularPath, "src/env/env.ts");
-                fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-
-                const envObject = {
-                  production: true,
-                  stage: props.stageName ?? "dev",
-                  ...(props.appConfig || {}),
-                };
-
-                fs.writeFileSync(
-                  envFilePath,
-                  `export const environment = ${JSON.stringify(envObject, null, 2)};`,
-                  { encoding: "utf8" }
-                );
                 spawnSync(
                   [
                     `cd ${props.relativeAngularPath}`,
@@ -135,6 +127,7 @@ export class AngularConstruct extends Construct {
             },
           },
         }),
+        s3Deployment.Source.jsonData("config.json", configContent),
       ],
       distribution: webDistribution,
     });
