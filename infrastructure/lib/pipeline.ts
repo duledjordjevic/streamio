@@ -32,7 +32,7 @@ export class PipelineStage extends Stage {
             userPoolId: securityStack.cognitoPool.userPool.userPoolId,
             userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId,
             allowOrigins: [Lazy.string({
-                produce: (): string => angularStack.distributionDomainName
+                produce: (): string => `https://${angularStack.distributionDomainName}`
             })] 
         });
         
