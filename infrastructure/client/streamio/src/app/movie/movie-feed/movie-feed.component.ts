@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import {  MovieDB } from '../model/movie.model';
 import { MovieService } from 'src/app/movie-crud/service/movie-service';
-import { environment } from 'src/env/env';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/auth/service/AuthService';
 

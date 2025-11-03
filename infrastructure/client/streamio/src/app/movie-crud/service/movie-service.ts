@@ -5,7 +5,6 @@ import { Observable } from 'rxjs';
 import { AuthService } from 'src/app/auth/service/AuthService';
 import { MovieDB, TopicArn, UserSubscriptions } from 'src/app/movie/model/movie.model';
 import { ConfigService } from 'src/app/service/config.service';
-// import { environment } from 'src/env/env';
 
 @Injectable({
   providedIn: 'root'
