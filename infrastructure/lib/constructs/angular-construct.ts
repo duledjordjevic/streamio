@@ -86,6 +86,12 @@ export class AngularConstruct extends Construct {
     webAppBucket: s3.IBucket,
     webDistribution: cloudfront.CloudFrontWebDistribution
   ) {
+    const envJson = JSON.stringify({
+      production: true,
+      stage: props.stageName,
+      ...(props.appConfig || {})
+    }, null, 2).replace(/"/g, '\\"');
+
     new s3Deployment.BucketDeployment(this, "AngularAppDeployment", {
       destinationBucket: webAppBucket,
       sources: [
@@ -105,11 +111,7 @@ export class AngularConstruct extends Construct {
                 spawnSync(
                   [
                     `cd ${props.relativeAngularPath}`,
-                    `cat > src/env/env.ts <<'EOF'\nexport const environment = ${JSON.stringify({
-                      production: true,
-                      stage: props.stageName,
-                      ...(props.appConfig || {})
-                    }, null, 2)};\nEOF`,
+                    `echo "export const environment = ${envJson};" > src/env/env.ts`,
                     `npm ci`,
                     `npm run build -- -c ${props.buildConfiguration} --output-path ${outputDir}`,
                   ].join(" && "),
