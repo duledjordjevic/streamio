@@ -17,6 +17,7 @@ interface LambdaStackProps extends cdk.StackProps {
     stageName?: string;
     userPoolId?: string;
     userPoolClientId?: string;
+    allowOrigins?: string[];
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -59,7 +60,7 @@ export class LambdaStack extends cdk.Stack {
                     apigatewayv2.CorsHttpMethod.POST,
                     apigatewayv2.CorsHttpMethod.OPTIONS,
                 ],
-                allowOrigins: ["http://localhost:4200", "https://d1mobe0bs79emz.cloudfront.net"],
+                allowOrigins: props?.allowOrigins ?? ["http://localhost:4200"],
                 allowHeaders: ["Content-Type", "Authorization"],
                 allowCredentials: true,
                 exposeHeaders: ["*"],

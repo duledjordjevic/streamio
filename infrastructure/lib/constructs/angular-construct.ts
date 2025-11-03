@@ -25,7 +25,9 @@ interface AngularConstructProps {
   readonly appConfig?: { [key: string]: string };
 }
 
-export class AngularConstruct extends Construct {
+export class AngularConstruct extends Construct {  
+  public readonly distributionDomainName: string;
+
   constructor(scope: Construct, id: string, props: AngularConstructProps) {
     super(scope, id);
 
@@ -34,6 +36,9 @@ export class AngularConstruct extends Construct {
     });
 
     const webDistribution = this.createCloudFrontDistribution(webAppBucket);
+
+    this.distributionDomainName = webDistribution.distributionDomainName;
+
     new CfnOutput(this, 'WebAppDomainName', {
         value: webDistribution.distributionDomainName
     });

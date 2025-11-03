@@ -7,14 +7,18 @@ export interface AngularStackProps extends cdk.StackProps {
   readonly appConfig?: { [key: string]: string };
 }
 export class AngularStack extends cdk.Stack {
+  public readonly distributionDomainName: string;
+
   constructor(scope: Construct, id: string, props?: AngularStackProps) {
     super(scope, id, props);
 
-    new AngularConstruct(this, "demo-deployment", {
+    const construct = new AngularConstruct(this, "demo-deployment", {
       buildConfiguration: "production",
       relativeAngularPath: "./client/streamio",
       stageName: props?.stageName,
       appConfig : props?.appConfig
     });
+
+    this.distributionDomainName = construct.distributionDomainName;
   }
 }

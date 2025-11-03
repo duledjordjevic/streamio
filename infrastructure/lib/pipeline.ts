@@ -1,4 +1,4 @@
-import { Stage, StageProps } from "aws-cdk-lib";
+import { Lazy, Stage, StageProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { DatabaseStack } from "./database-stack";
 import { LambdaStack } from "./lambda-stack";
@@ -30,16 +30,13 @@ export class PipelineStage extends Stage {
             history: this.database.history,
             stageName: props?.stageName,
             userPoolId: securityStack.cognitoPool.userPool.userPoolId,
-            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId
-        })
-        
-
-        new TranscoderStack(this, 'TranscoderStack', {
-            bucketName: this.storage.bucket.bucketName,
-            metadata: this.database.metadata,
-            stageName: props?.stageName
+            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId,
+            allowOrigins: [Lazy.string({
+                produce: (): string => angularStack.distributionDomainName
+            })] 
         });
-        new AngularStack(this, 'AngularStack', {
+        
+        const angularStack = new AngularStack(this, 'AngularStack', {
             stageName: props?.stageName,
             appConfig: {
                 API: apigateway.api.apiEndpoint ?? `https://${apigateway.api.apiId}.execute-api.${this.region}.amazonaws.com`,
@@ -47,6 +44,12 @@ export class PipelineStage extends Stage {
                 USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId,
                 STAGE: props?.stageName ?? 'dev'
             }
+        });
+
+        new TranscoderStack(this, 'TranscoderStack', {
+            bucketName: this.storage.bucket.bucketName,
+            metadata: this.database.metadata,
+            stageName: props?.stageName
         });
 
         new NotificationStack(this, 'NotificationStack', {
