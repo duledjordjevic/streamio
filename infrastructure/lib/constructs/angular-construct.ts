@@ -111,7 +111,7 @@ export class AngularConstruct extends Construct {
                 spawnSync(
                   [
                     `cd ${props.relativeAngularPath}`,
-                    `echo "export const environment = ${envJson};" > src/env/env.ts`,
+                    `printf "export const environment = %s;" '${envJson}' > src/env/env.ts`,
                     `npm ci`,
                     `npm run build -- -c ${props.buildConfiguration} --output-path ${outputDir}`,
                   ].join(" && "),
