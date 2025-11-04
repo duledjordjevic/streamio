@@ -11,6 +11,7 @@ import { TranscoderStack } from "./transcoder-stack";
 import { AngularStack } from "./stacks/angular-stack";
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from "aws-cdk-lib/custom-resources";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { ConfigStack } from "./config-stack";
 
 
 
@@ -49,29 +50,14 @@ export class PipelineStage extends Stage {
             USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId
         };
 
-        const putConfig = {
-            service: 'S3',
-            action: 'putObject',
-            parameters: {
-                Bucket: angularStack.webAppBucket.bucketName,
-                Key: 'config.json',
-                Body: JSON.stringify(configObjToken), 
-                ContentType: 'application/json',
-                CacheControl: 'no-cache, max-age=0, must-revalidate'
-            },
-            physicalResourceId: PhysicalResourceId.of(`config-${props?.stageName ?? 'dev'}`)
-        };
-
-        new AwsCustomResource(this, 'PutConfigJson', {
-            onCreate: putConfig,
-            onUpdate: putConfig,
-            policy: AwsCustomResourcePolicy.fromStatements([
-                new PolicyStatement({
-                actions: ['s3:PutObject', 's3:PutObjectAcl'],
-                resources: [`${angularStack.webAppBucket.bucketArn}/*`],
-                })
-            ])
+        const configStack = new ConfigStack(this, 'WebConfigStack', {
+            bucketName: angularStack.webAppBucket.bucketName,
+            configObject: configObjToken
         });
+
+        configStack.addDependency(angularStack);  
+        configStack.addDependency(apigateway);     
+        configStack.addDependency(securityStack); 
 
         new TranscoderStack(this, 'TranscoderStack', {
             bucketName: this.storage.bucket.bucketName,
