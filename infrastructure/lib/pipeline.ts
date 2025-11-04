@@ -9,6 +9,8 @@ import { NotificationStack } from "./stacks/notification-stack";
 import { StorageStack } from "./storage-stack";
 import { TranscoderStack } from "./transcoder-stack";
 import { AngularStack } from "./stacks/angular-stack";
+import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from "aws-cdk-lib/custom-resources";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 
 
@@ -35,15 +37,41 @@ export class PipelineStage extends Stage {
         
         const angularStack = new AngularStack(this, 'AngularStack', {
             stageName: props?.stageName,
-            appConfig: {
-                API: apigateway.api.apiEndpoint ?? `https://${apigateway.api.apiId}.execute-api.${this.region}.amazonaws.com`,
-                USER_POOL_ID: securityStack.cognitoPool.userPool.userPoolId,
-                USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId,
-                STAGE: props?.stageName ?? 'dev'
-            }
         });
         angularStack.addDependency(securityStack);
         angularStack.addDependency(apigateway);
+
+        const configObjToken = {
+            production: props?.stageName === 'prod',
+            stage: props?.stageName ?? 'dev',
+            API: apigateway.api.apiEndpoint,   
+            USER_POOL_ID: securityStack.cognitoPool.userPool.userPoolId,
+            USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId
+        };
+
+        const putConfig = {
+            service: 'S3',
+            action: 'putObject',
+            parameters: {
+                Bucket: angularStack.webAppBucket.bucketName,
+                Key: 'config.json',
+                Body: JSON.stringify(configObjToken), 
+                ContentType: 'application/json',
+                CacheControl: 'no-cache, max-age=0, must-revalidate'
+            },
+            physicalResourceId: PhysicalResourceId.of(`config-${props?.stageName ?? 'dev'}`)
+        };
+
+        new AwsCustomResource(this, 'PutConfigJson', {
+            onCreate: putConfig,
+            onUpdate: putConfig,
+            policy: AwsCustomResourcePolicy.fromStatements([
+                new PolicyStatement({
+                actions: ['s3:PutObject', 's3:PutObjectAcl'],
+                resources: [`${angularStack.webAppBucket.bucketArn}/*`],
+                })
+            ])
+        });
 
         new TranscoderStack(this, 'TranscoderStack', {
             bucketName: this.storage.bucket.bucketName,
