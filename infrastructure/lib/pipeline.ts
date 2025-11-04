@@ -34,6 +34,9 @@ export class PipelineStage extends Stage {
             stageName: props?.stageName,
             userPoolId: securityStack.cognitoPool.userPool.userPoolId,
             userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId,
+            allowOrigins: Lazy.list({ produce: () => [
+                `https://${angularStack.webDistribution.distributionDomainName}`,
+            ] })
         });
         
         const angularStack = new AngularStack(this, 'AngularStack', {
