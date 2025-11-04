@@ -24,9 +24,9 @@ export class CicdStack extends cdk.Stack {
             stageName: 'dev'
         }))
 
-        // const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
-        //     stageName: 'qa'
-        // }));
-        // qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
+        const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
+            stageName: 'qa'
+        }));
+        qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
     }
 }
