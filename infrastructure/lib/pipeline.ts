@@ -33,10 +33,7 @@ export class PipelineStage extends Stage {
             history: this.database.history,
             stageName: props?.stageName,
             userPoolId: securityStack.cognitoPool.userPool.userPoolId,
-            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId,
-            allowOrigins: Lazy.list({ produce: () => [
-                `https://${angularStack.webDistribution.distributionDomainName}`,
-            ] })
+            userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId
         });
         
         const angularStack = new AngularStack(this, 'AngularStack', {
@@ -46,8 +43,6 @@ export class PipelineStage extends Stage {
         angularStack.addDependency(apigateway);
 
         const configObjToken = {
-            production: props?.stageName === 'prod',
-            stage: props?.stageName ?? 'dev',
             API: apigateway.api.apiEndpoint,   
             USER_POOL_ID: securityStack.cognitoPool.userPool.userPoolId,
             USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId
@@ -56,7 +51,10 @@ export class PipelineStage extends Stage {
         const configStack = new ConfigStack(this, 'WebConfigStack', {
             bucketName: angularStack.webAppBucket.bucketName,
             configObject: configObjToken,
-            distributionId: angularStack.webDistribution.distributionId
+            distributionId: angularStack.webDistribution.distributionId,
+            apiId: apigateway.api.apiId,
+            cloudfrontDomain: angularStack.webDistribution.distributionDomainName,
+            stageName: props?.stageName ?? 'dev'
         });
 
         configStack.addDependency(angularStack);  

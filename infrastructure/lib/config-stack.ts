@@ -7,6 +7,9 @@ export interface ConfigStackProps extends cdk.StackProps {
     readonly bucketName: string;
     readonly configObject: any;
     readonly distributionId: string;
+    readonly apiId: string;
+    readonly cloudfrontDomain: string;
+    readonly stageName: string;
 }
 
 export class ConfigStack extends cdk.Stack {
@@ -60,6 +63,49 @@ export class ConfigStack extends cdk.Stack {
             new PolicyStatement({
             actions: ['cloudfront:CreateInvalidation'],
             resources: ['*'] 
+            })
+        ])
+    });
+
+    const corsUpdate = new AwsCustomResource(this, 'UpdateApiCors', {
+        onCreate: {
+            service: 'ApiGatewayV2',
+            action: 'updateApi',
+            parameters: {
+            ApiId: props.apiId, 
+            CorsConfiguration: {
+                AllowOrigins: [
+                `https://${props.cloudfrontDomain}`, 
+                ],
+                AllowHeaders: ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token'],
+                AllowMethods: ['GET','POST','PUT','DELETE','OPTIONS'],
+                MaxAge: 3600,
+                AllowCredentials: false
+            }
+            },
+            physicalResourceId: PhysicalResourceId.of(`update-cors-${props.stageName}`)
+        },
+        onUpdate: {
+            service: 'ApiGatewayV2',
+            action: 'updateApi',
+            parameters: {
+            ApiId: props.apiId, 
+            CorsConfiguration: {
+                AllowOrigins: [
+                `https://${props.cloudfrontDomain}`, 
+                ],
+                AllowHeaders: ['Content-Type', 'Authorization', 'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token'],
+                AllowMethods: ['GET','POST','PUT','DELETE','OPTIONS'],
+                MaxAge: 3600,
+                AllowCredentials: false
+            }
+            },
+            physicalResourceId: PhysicalResourceId.of(`update-cors-${props.stageName}`)
+        },
+        policy: AwsCustomResourcePolicy.fromStatements([
+            new PolicyStatement({
+            actions: ['apigateway:PATCH','apigateway:UpdateApi','apigateway:Update*','apigateway:GET*'],
+            resources: ['*'],
             })
         ])
     });
