@@ -9,13 +9,10 @@ import { ConfigService } from 'src/app/service/config.service';
 @Injectable({
   providedIn: 'root'
 })
-export class MovieService implements OnInit{
+export class MovieService{
     private environment: any;
 
     constructor(private http: HttpClient, private authService: AuthService, private configService: ConfigService) {
-
-    }
-    ngOnInit(): void {
         this.environment = this.configService.getConfig();
     }
 
