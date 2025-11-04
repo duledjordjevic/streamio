@@ -52,7 +52,8 @@ export class PipelineStage extends Stage {
 
         const configStack = new ConfigStack(this, 'WebConfigStack', {
             bucketName: angularStack.webAppBucket.bucketName,
-            configObject: configObjToken
+            configObject: configObjToken,
+            distributionId: angularStack.webDistribution.distributionId
         });
 
         configStack.addDependency(angularStack);  

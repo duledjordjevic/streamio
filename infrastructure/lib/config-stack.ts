@@ -4,8 +4,9 @@ import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from '
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export interface ConfigStackProps extends cdk.StackProps {
-  readonly bucketName: string;
-  readonly configObject: any; // ili konkretniji tip
+    readonly bucketName: string;
+    readonly configObject: any;
+    readonly distributionId: string;
 }
 
 export class ConfigStack extends cdk.Stack {
@@ -35,5 +36,33 @@ export class ConfigStack extends cdk.Stack {
         })
       ])
     });
+
+    const invalidate = {
+        service: 'CloudFront',
+        action: 'createInvalidation',
+        parameters: {
+            DistributionId: props.distributionId,
+            InvalidationBatch: {
+            Paths: {
+                Quantity: 1,
+                Items: ['/config.json']
+            },
+            CallerReference: `${Date.now()}`
+            }
+        },
+        physicalResourceId: PhysicalResourceId.of(`invalidate-${props.stackName ?? id}`)
+    };
+
+    new AwsCustomResource(this, 'InvalidateConfig', {
+        onCreate: invalidate,
+        onUpdate: invalidate,
+        policy: AwsCustomResourcePolicy.fromStatements([
+            new PolicyStatement({
+            actions: ['cloudfront:CreateInvalidation'],
+            resources: ['*'] 
+            })
+        ])
+    });
+
   }
 }
