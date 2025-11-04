@@ -31,9 +31,6 @@ export class PipelineStage extends Stage {
             stageName: props?.stageName,
             userPoolId: securityStack.cognitoPool.userPool.userPoolId,
             userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId,
-            // allowOrigins: [Lazy.string({
-            //     produce: (): string => `https://${angularStack.distributionDomainName}`
-            // })]
         });
         
         const angularStack = new AngularStack(this, 'AngularStack', {
@@ -45,6 +42,8 @@ export class PipelineStage extends Stage {
                 STAGE: props?.stageName ?? 'dev'
             }
         });
+        angularStack.addDependency(securityStack);
+        angularStack.addDependency(apigateway);
 
         new TranscoderStack(this, 'TranscoderStack', {
             bucketName: this.storage.bucket.bucketName,
