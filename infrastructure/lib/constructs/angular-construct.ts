@@ -88,12 +88,12 @@ export class AngularConstruct extends Construct {
     webAppBucket: s3.IBucket,
     webDistribution: cloudfront.CloudFrontWebDistribution
   ) {
-    // const configContent = {
-    //   API: props.appConfig?.API || '',
-    //   USER_POOL_ID: props.appConfig?.USER_POOL_ID || '',
-    //   USER_POOL_CLIENT_ID: props.appConfig?.USER_POOL_CLIENT_ID || '',
-    //   STAGE: props.appConfig?.STAGE || 'dev',
-    // };
+    const configContent = {
+      API: props.appConfig?.API || '',
+      USER_POOL_ID: props.appConfig?.USER_POOL_ID || '',
+      USER_POOL_CLIENT_ID: props.appConfig?.USER_POOL_CLIENT_ID || '',
+      STAGE: props.appConfig?.STAGE || 'dev',
+    };
 
     new s3Deployment.BucketDeployment(this, "AngularAppDeployment", {
       destinationBucket: webAppBucket,
@@ -127,7 +127,7 @@ export class AngularConstruct extends Construct {
             },
           },
         }),
-        // s3Deployment.Source.jsonData("config.json", configContent),
+        s3Deployment.Source.jsonData("config.json", configContent),
       ],
       distribution: webDistribution,
     });

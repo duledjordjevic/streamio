@@ -31,19 +31,19 @@ export class PipelineStage extends Stage {
             stageName: props?.stageName,
             userPoolId: securityStack.cognitoPool.userPool.userPoolId,
             userPoolClientId: securityStack.cognitoPool.userPoolClient.userPoolClientId,
-            allowOrigins: [Lazy.string({
-                produce: (): string => `https://${angularStack.distributionDomainName}`
-            })] 
+            // allowOrigins: [Lazy.string({
+            //     produce: (): string => `https://${angularStack.distributionDomainName}`
+            // })]
         });
         
         const angularStack = new AngularStack(this, 'AngularStack', {
             stageName: props?.stageName,
-            // appConfig: {
-            //     API: apigateway.api.apiEndpoint ?? `https://${apigateway.api.apiId}.execute-api.${this.region}.amazonaws.com`,
-            //     USER_POOL_ID: securityStack.cognitoPool.userPool.userPoolId,
-            //     USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId,
-            //     STAGE: props?.stageName ?? 'dev'
-            // }
+            appConfig: {
+                API: apigateway.api.apiEndpoint ?? `https://${apigateway.api.apiId}.execute-api.${this.region}.amazonaws.com`,
+                USER_POOL_ID: securityStack.cognitoPool.userPool.userPoolId,
+                USER_POOL_CLIENT_ID: securityStack.cognitoPool.userPoolClient.userPoolClientId,
+                STAGE: props?.stageName ?? 'dev'
+            }
         });
 
         new TranscoderStack(this, 'TranscoderStack', {
