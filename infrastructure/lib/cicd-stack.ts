@@ -32,8 +32,7 @@ export class CicdStack extends cdk.Stack {
                 'export BUCKET_NAME=dev-streamio-movies-bucket',
                 'export METADATA_TABLE=StreamioMetadata',
                 'pytest -q test_upload_url.py',
-            ],
-            primaryOutputDirectory: 'infrastructure/cdk.out'
+            ]
         }));
 
         // const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
