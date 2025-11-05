@@ -29,11 +29,10 @@ export class CicdStack extends cdk.Stack {
             commands: [
                 'cd infrastructure/test',
                 'python3 -m venv .env',
-                'source .env/bin/activate',
-                'pip install -r requirements.txt',   
+                '.env/bin/pip install -r requirements.txt',   
                 'export BUCKET_NAME=dev-streamio-movies-bucket',
                 'export METADATA_TABLE=StreamioMetadata',
-                'pytest -q test_upload_url.py',
+                '.env/bin/pytest -q test_upload_url.py',
             ],
             primaryOutputDirectory: 'infrastructure/cdk.out'
         }));
