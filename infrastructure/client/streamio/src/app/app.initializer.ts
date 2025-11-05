@@ -15,7 +15,6 @@ export function initializeApp(http: HttpClient, configService: ConfigService) {
       .toPromise()
       .then((config: any) => {
         configService.setConfig(config);
-        console.log('Config loaded:', config);
 
         Amplify.configure({
           Auth: {
@@ -25,7 +24,6 @@ export function initializeApp(http: HttpClient, configService: ConfigService) {
             }
           }
         });
-        console.log('Amplify configured');
         
       })
       .catch(err => {
