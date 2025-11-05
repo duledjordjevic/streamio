@@ -28,11 +28,10 @@ export class CicdStack extends cdk.Stack {
         devStage.addPre(new CodeBuildStep('unit tests', {
             commands: [
                 'cd infrastructure/test',
-                'python3 -m venv .env',
-                '.env/bin/pip install -r requirements.txt',   
+                'pip install -r requirements.txt',   
                 'export BUCKET_NAME=dev-streamio-movies-bucket',
                 'export METADATA_TABLE=StreamioMetadata',
-                '.env/bin/pytest -q test_upload_url.py',
+                'pytest -q test_upload_url.py',
             ],
             primaryOutputDirectory: 'infrastructure/cdk.out'
         }));
