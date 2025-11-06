@@ -37,6 +37,9 @@ export class CicdStack extends cdk.Stack {
             runtime: lambda.Runtime.PYTHON_3_11,
             handler: 'cicd-notifier.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/event-invoked')),
+            environment: {
+                TARGET_TOPIC: notifyTopic.topicArn
+            }
         });
 
         notifyTopic.grantPublish(notifierFn);
