@@ -2,7 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import { CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import { PipelineStage } from './pipeline';
-import path = require('path');
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 export class CicdStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -20,6 +23,38 @@ export class CicdStack extends cdk.Stack {
                 primaryOutputDirectory: 'infrastructure/cdk.out'
             })
         })
+
+        const notifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
+            displayName: 'Pipeline notifications (streamio)',
+            topicName: 'streamio-pipeline-notifications',
+        });
+
+        notifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
+
+        new events.Rule(this, 'CodePipelineFailedRule', {
+            description: 'Notify on failed pipeline executions',
+            eventPattern: {
+                source: ['aws.codepipeline'],
+                detailType: ['CodePipeline Pipeline Execution State Change'],
+                detail: {
+                    state: ['FAILED'],
+                    pipeline: ['Pipeline'],              
+                },
+            },
+            targets: [new targets.SnsTopic(notifyTopic)],
+        });
+
+        new events.Rule(this, 'CodeBuildFailedRule', {
+            description: 'Notify on failed codebuild builds',
+            eventPattern: {
+                source: ['aws.codebuild'],
+                detailType: ['CodeBuild Build State Change'],
+                detail: {
+                    'build-status': ['FAILED']
+                },
+            },
+            targets: [new targets.SnsTopic(notifyTopic)],
+        });
 
         const devStage = pipeline.addStage(new PipelineStage(this, 'PipelineDevStage', {
             stageName: 'dev'
@@ -39,12 +74,11 @@ export class CicdStack extends cdk.Stack {
         //     stageName: 'qa'
         // }));
         // qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
-        // qaStage.addPre(new CodeBuildStep('unit tests' {
-        //     commands: [
-        //         'cd infrastructure',
-        //         'npm ci',
-        //         'npm test'
-        //     ]
+
+        // const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
+        //     stageName: 'prod'
         // }));
+        // prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
+       
     }
 }
