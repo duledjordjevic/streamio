@@ -7,6 +7,7 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import path = require('path');
 
 export class CicdStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -34,8 +35,8 @@ export class CicdStack extends cdk.Stack {
 
         const notifierFn = new lambda.Function(this, "NotifierFn", {
             runtime: lambda.Runtime.PYTHON_3_11,
-            handler: "app.handler",
-            code: lambda.Code.fromAsset("lambda/event-invoked/cicd-notifier")
+            handler: 'cicd-notifier.handler',
+            code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/event-invoked')),
         });
 
         notifyTopic.grantPublish(notifierFn);
