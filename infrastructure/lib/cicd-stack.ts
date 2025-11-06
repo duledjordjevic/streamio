@@ -6,6 +6,7 @@ import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 export class CicdStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -31,6 +32,14 @@ export class CicdStack extends cdk.Stack {
 
         notifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
 
+        const notifierFn = new lambda.Function(this, "NotifierFn", {
+            runtime: lambda.Runtime.PYTHON_3_11,
+            handler: "app.handler",
+            code: lambda.Code.fromAsset("lambda/notifier")
+        });
+
+        notifyTopic.grantPublish(notifierFn);
+
         new events.Rule(this, 'CodePipelineFailedRule', {
             description: 'Notify on failed pipeline executions',
             eventPattern: {
@@ -41,7 +50,7 @@ export class CicdStack extends cdk.Stack {
                     pipeline: ['Pipeline'],              
                 },
             },
-            targets: [new targets.SnsTopic(notifyTopic)],
+            targets: [new targets.LambdaFunction(notifierFn)],
         });
 
         new events.Rule(this, 'CodeBuildFailedRule', {
@@ -53,7 +62,7 @@ export class CicdStack extends cdk.Stack {
                     'build-status': ['FAILED']
                 },
             },
-            targets: [new targets.SnsTopic(notifyTopic)],
+            targets: [new targets.LambdaFunction(notifierFn)],
         });
 
         const devStage = pipeline.addStage(new PipelineStage(this, 'PipelineDevStage', {
