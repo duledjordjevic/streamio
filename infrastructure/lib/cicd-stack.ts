@@ -35,7 +35,7 @@ export class CicdStack extends cdk.Stack {
         const notifierFn = new lambda.Function(this, "NotifierFn", {
             runtime: lambda.Runtime.PYTHON_3_11,
             handler: "app.handler",
-            code: lambda.Code.fromAsset("lambda/notifier")
+            code: lambda.Code.fromAsset("lambda/event-invoked/cicd-notifier")
         });
 
         notifyTopic.grantPublish(notifierFn);
