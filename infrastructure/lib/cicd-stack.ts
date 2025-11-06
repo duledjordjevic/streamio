@@ -75,7 +75,7 @@ export class CicdStack extends cdk.Stack {
 
         devStage.addPre(new CodeBuildStep('unit tests', {
             commands: [
-                'cd infrastructure/test',
+                'cd infrastructure/test/unit',
                 'pip install -r requirements.txt',   
                 'export BUCKET_NAME=dev-streamio-movies-bucket',
                 'export METADATA_TABLE=StreamioMetadata',
@@ -83,15 +83,15 @@ export class CicdStack extends cdk.Stack {
             ]
         }));
 
-        // const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
-        //     stageName: 'qa'
-        // }));
-        // qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
+        const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
+            stageName: 'qa'
+        }));
+        qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
 
-        // const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
-        //     stageName: 'prod'
-        // }));
-        // prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
+        const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
+            stageName: 'prod'
+        }));
+        prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
        
     }
 }
