@@ -7,7 +7,7 @@ import importlib.util
 
 tests_dir = os.path.dirname(__file__)
 upload_module_path = os.path.abspath(
-    os.path.join(tests_dir, '..', 'lambda', 'presigned-endpoints', 'upload_url.py')
+    os.path.join(tests_dir, '..', '..', 'lambda', 'presigned-endpoints', 'upload_url.py')
 )
 
 spec = importlib.util.spec_from_file_location("upload_url_module", upload_module_path)
