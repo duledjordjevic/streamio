@@ -69,9 +69,34 @@ export class CicdStack extends cdk.Stack {
             targets: [new targets.LambdaFunction(notifierFn)],
         });
 
+        const sonarQubeStep = new CodeBuildStep('SonarQube Analysis', {
+            commands: [
+                // Install SonarQube Scanner
+                'export SONAR_SCANNER_VERSION=7.2.0.5079',
+                'export SONAR_SCANNER_HOME=$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux-x64',
+                'curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux-x64.zip',
+                'unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/',
+                'export PATH=$SONAR_SCANNER_HOME/bin:$PATH',
+                
+                // Run SonarQube analysis
+                'sonar-scanner ' +
+                '-Dsonar.projectKey=duledjordjevic_streamio ' +
+                '-Dsonar.organization=duledjordjevic ' +
+                '-Dsonar.sources=. ' +
+                '-Dsonar.host.url=https://sonarcloud.io ' +
+                '-Dsonar.token=$SONAR_TOKEN'
+            ],
+            //  AWS Secrets Manager SONAR_TOKEN
+            env: {
+                SONAR_TOKEN: 'sonarqube-token' 
+            }
+        });
+
         const devStage = pipeline.addStage(new PipelineStage(this, 'PipelineDevStage', {
             stageName: 'dev'
         }))
+
+        devStage.addPre(sonarQubeStep);
 
         devStage.addPre(new CodeBuildStep('unit tests', {
             commands: [
@@ -83,15 +108,15 @@ export class CicdStack extends cdk.Stack {
             ]
         }));
 
-        const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
-            stageName: 'qa'
-        }));
-        qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
+        // const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
+        //     stageName: 'qa'
+        // }));
+        // qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
 
-        const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
-            stageName: 'prod'
-        }));
-        prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
+        // const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
+        //     stageName: 'prod'
+        // }));
+        // prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
        
     }
 }
