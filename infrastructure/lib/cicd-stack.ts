@@ -7,6 +7,7 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import path = require('path');
 
@@ -77,32 +78,18 @@ export class CicdStack extends cdk.Stack {
         );
 
         const sonarQubeStep = new CodeBuildStep('SonarQube Analysis', {
-            commands: [
-                // Install SonarQube Scanner
-                'export SONAR_SCANNER_VERSION=7.2.0.5079',
-                'export SONAR_SCANNER_HOME=$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux-x64',
-                'curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux-x64.zip',
-                'unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/',
-                'export PATH=$SONAR_SCANNER_HOME/bin:$PATH',
-                
-                // Run SonarQube analysis
-                'sonar-scanner ' +
-                '-Dsonar.projectKey=duledjordjevic_streamio ' +
-                '-Dsonar.organization=duledjordjevic ' +
-                '-Dsonar.sources=. ' +
-                '-Dsonar.host.url=https://sonarcloud.io ' +
-                '-Dsonar.token=$SONAR_TOKEN'
-            ],
-            //  AWS Secrets Manager SONAR_TOKEN
+            commands: [],
             buildEnvironment: {
                 environmentVariables: {
                     SONAR_TOKEN: {
                         type: cdk.aws_codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER,
-                        value: sonarToken.secretArn  
+                        value: sonarToken.secretArn
                     }
+                }
+            },
+            partialBuildSpec: codebuild.BuildSpec.fromSourceFilename('infrastructure/buiildspecs/sonar.yml')
             }
-    }
-        });
+        );
 
         const devStage = pipeline.addStage(new PipelineStage(this, 'PipelineDevStage', {
             stageName: 'dev'
