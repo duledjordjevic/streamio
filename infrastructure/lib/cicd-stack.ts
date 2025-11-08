@@ -91,9 +91,9 @@ export class CicdStack extends cdk.Stack {
                 '-Dsonar.organization=duledjordjevic ' +
                 '-Dsonar.sources=. ' +
                 '-Dsonar.host.url=https://sonarcloud.io ' +
-                '-Dsonar.token=$SONAR_TOKEN ' +
-                '-Dsonar.qualitygate.wait=true ' +
-                '-Dsonar.ws.timeout=300'
+                '-Dsonar.token=$SONAR_TOKEN ' 
+                // '-Dsonar.qualitygate.wait=true ' +
+                // '-Dsonar.ws.timeout=300'
             ],
             //  AWS Secrets Manager SONAR_TOKEN
             buildEnvironment: {
