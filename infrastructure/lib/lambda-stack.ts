@@ -14,6 +14,10 @@ interface LambdaStackProps extends cdk.StackProps {
     bucket: s3.Bucket;
     metadata: dynamodb.TableV2;
     history: dynamodb.TableV2;
+    stageName?: string;
+    userPoolId?: string;
+    userPoolClientId?: string;
+    allowOrigins?: string[];
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -24,23 +28,29 @@ export class LambdaStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: LambdaStackProps) {
         super(scope, id, props);
 
-        const authorizerLayer = new lambda.LayerVersion(this, 'Authorizer-Layer', {
+        const prefix = props && props.stageName ? `${props.stageName}-` : '';
+
+        const authorizerLayer = new lambda.LayerVersion(this, `${prefix}Authorizer-Layer`, {
             removalPolicy: cdk.RemovalPolicy.RETAIN,
             code: lambda.Code.fromAsset(path.join(__dirname, '../layer-assets', 'authorizer.zip')),
             compatibleRuntimes: [lambda.Runtime.NODEJS_18_X],
             description: 'Authorizer aws-jwt-verify node module',
         });
 
-        const authorizerFunction = new lambda.Function(this, 'AuthorizerFunction', {
+        const authorizerFunction = new lambda.Function(this, `${prefix}AuthorizerFunction`, {
             runtime: lambda.Runtime.NODEJS_18_X,
             handler: 'authorizer.handler',
             timeout: cdk.Duration.seconds(10),
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
-            layers: [authorizerLayer]
+            layers: [authorizerLayer],
+            environment: {
+                USER_POOL_ID: props.userPoolId ?? '',
+                CLIENT_ID: props.userPoolClientId ?? ''
+            }
         });
 
-        this.api = new apigatewayv2.HttpApi(this, 'StreamioApi', {
-            apiName: 'Video Streaming Service',
+        this.api = new apigatewayv2.HttpApi(this, `${prefix}StreamioApi`, {
+            apiName: `${prefix}Video Streaming Service`,
             description: 'Service for upload, download and streaming of videos.',
             corsPreflight: {
                 allowMethods: [
@@ -50,7 +60,7 @@ export class LambdaStack extends cdk.Stack {
                     apigatewayv2.CorsHttpMethod.POST,
                     apigatewayv2.CorsHttpMethod.OPTIONS,
                 ],
-                allowOrigins: ["http://localhost:4200", "https://d1mobe0bs79emz.cloudfront.net"],
+                allowOrigins: props?.allowOrigins ?? ["http://localhost:4200"],
                 allowHeaders: ["Content-Type", "Authorization"],
                 allowCredentials: true,
                 exposeHeaders: ["*"],
@@ -59,7 +69,7 @@ export class LambdaStack extends cdk.Stack {
         });
 
         this.httpAuthorizer = new lambdaAuthorizers.HttpLambdaAuthorizer(
-            "HttpLambdaAuthorizer",
+            `${prefix}HttpLambdaAuthorizer`,
             authorizerFunction,
             {
                 responseTypes: [
@@ -68,7 +78,7 @@ export class LambdaStack extends cdk.Stack {
             }
         );
 
-        const uploadURL = new lambda.Function(this, 'UploadURLLambda', {
+        const uploadURL = new lambda.Function(this, `${prefix}UploadURLLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'upload_url.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/presigned-endpoints')),
@@ -83,7 +93,7 @@ export class LambdaStack extends cdk.Stack {
 
 
         const uploadURLIntegration = new HttpLambdaIntegration(
-            "GetUploadUrl",
+            `${prefix}GetUploadUrl`,
             uploadURL
         );
         this.api.addRoutes({
@@ -93,7 +103,7 @@ export class LambdaStack extends cdk.Stack {
             authorizer: this.httpAuthorizer,
         });
 
-        const downloadURL = new lambda.Function(this, 'DownloadURLLambda', {
+        const downloadURL = new lambda.Function(this, `${prefix}DownloadURLLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'download_url.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/presigned-endpoints')),
@@ -107,7 +117,7 @@ export class LambdaStack extends cdk.Stack {
         props.history.grantWriteData(downloadURL);
 
         const downloadURLIntegration = new HttpLambdaIntegration(
-            "DownloadURL",
+            `${prefix}DownloadURL`,
             downloadURL
         );
         this.api.addRoutes({
@@ -118,7 +128,7 @@ export class LambdaStack extends cdk.Stack {
         });
 
 
-        const previewURL = new lambda.Function(this, 'PreviewURLLambda', {
+        const previewURL = new lambda.Function(this, `${prefix}PreviewURLLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'preview_url.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/presigned-endpoints')),
@@ -132,7 +142,7 @@ export class LambdaStack extends cdk.Stack {
         props.history.grantWriteData(previewURL);
 
         const previewURLIntegration = new HttpLambdaIntegration(
-            "PreviewURL",
+            `${prefix}PreviewURL`,
             previewURL
         );
         this.api.addRoutes({
@@ -142,7 +152,7 @@ export class LambdaStack extends cdk.Stack {
             authorizer: this.httpAuthorizer,
         });
 
-        const deleteMovie = new lambda.Function(this, 'DeleteMovieLambda', {
+        const deleteMovie = new lambda.Function(this, `${prefix}DeleteMovieLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'delete_movie.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
@@ -157,7 +167,7 @@ export class LambdaStack extends cdk.Stack {
         props.metadata.grantReadWriteData(deleteMovie);
 
         const deleteMovieIntegration = new HttpLambdaIntegration(
-            "DeleteMovie",
+            `${prefix}DeleteMovie`,
             deleteMovie
         );
         this.api.addRoutes({
@@ -167,7 +177,7 @@ export class LambdaStack extends cdk.Stack {
             authorizer: this.httpAuthorizer,
         });
 
-        const getMovie = new lambda.Function(this, 'GetMovieLambda', {
+        const getMovie = new lambda.Function(this, `${prefix}GetMovieLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'get_movie.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/metadata-endpoints')),
@@ -179,7 +189,7 @@ export class LambdaStack extends cdk.Stack {
         props.metadata.grantReadData(getMovie);
 
         const getMovieIntegration = new HttpLambdaIntegration(
-            "GetMovie",
+            `${prefix}GetMovie`,
             getMovie
         );
         this.api.addRoutes({
@@ -189,7 +199,7 @@ export class LambdaStack extends cdk.Stack {
             authorizer: this.httpAuthorizer,
         });
 
-        const queryMovies = new lambda.Function(this, 'QueryMoviesLambda', {
+        const queryMovies = new lambda.Function(this, `${prefix}QueryMoviesLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'query_movies.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/metadata-endpoints')),
@@ -201,7 +211,7 @@ export class LambdaStack extends cdk.Stack {
         props.metadata.grantReadData(queryMovies);
 
         const queryMovieIntegration = new HttpLambdaIntegration(
-            "GetMovie",
+            `${prefix}GetMovie`,
             queryMovies
         );
         this.api.addRoutes({
@@ -211,7 +221,7 @@ export class LambdaStack extends cdk.Stack {
             authorizer: this.httpAuthorizer,
         });
 
-        const putMovie = new lambda.Function(this, 'PutMovieLambda', {
+        const putMovie = new lambda.Function(this, `${prefix}PutMovieLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'put_movie.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/metadata-endpoints')),
@@ -223,7 +233,7 @@ export class LambdaStack extends cdk.Stack {
         props.metadata.grantWriteData(putMovie);
 
         const putMovieIntegration = new HttpLambdaIntegration(
-            "PutMovie",
+            `${prefix}PutMovie`,
             putMovie
         );
         this.api.addRoutes({

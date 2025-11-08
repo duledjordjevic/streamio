@@ -19,20 +19,23 @@ interface FeedStackProps extends cdk.StackProps {
     likes: dynamodb.TableV2;
     history: dynamodb.TableV2;
     feed: dynamodb.TableV2;
+    stageName?: string;
 }
 
 export class FeedStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: FeedStackProps) {
         super(scope, id, props);
 
-        const dlQueue = new sqs.Queue(this, 'FeedDLQueue', {
-            queueName: 'feed-dl-queue',
+        const prefix = props && props.stageName ? `${props.stageName}-` : '';
+
+        const dlQueue = new sqs.Queue(this, `${prefix}FeedDLQueue`, {
+            queueName: `${prefix}feed-dl-queue`,
             encryption: sqs.QueueEncryption.KMS_MANAGED,
             enforceSSL: true,
         })
 
-        const queue = new sqs.Queue(this, 'FeedQueue', {
-            queueName: 'feed-queue',
+        const queue = new sqs.Queue(this, `${prefix}FeedQueue`, {
+            queueName: `${prefix}feed-queue`,
             encryption: sqs.QueueEncryption.KMS_MANAGED,
             enforceSSL: true,
             deadLetterQueue: {
@@ -41,7 +44,7 @@ export class FeedStack extends cdk.Stack {
             }
         })
 
-        const feedHistory = new lambda.Function(this, 'FeedHistoryLambda', {
+        const feedHistory = new lambda.Function(this, `${prefix}FeedHistoryLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'feed_history_processor.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/event-invoked')),
@@ -63,7 +66,7 @@ export class FeedStack extends cdk.Stack {
             retryAttempts: 10
         }));
 
-        const feedLikes = new lambda.Function(this, 'FeedLikesLambda', {
+        const feedLikes = new lambda.Function(this, `${prefix}FeedLikesLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'feed_likes_processor.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/event-invoked')),
@@ -85,12 +88,13 @@ export class FeedStack extends cdk.Stack {
             retryAttempts: 10
         }));
 
-        const feedSubs = new lambda.Function(this, 'FeedSubsLambda', {
+        const feedSubs = new lambda.Function(this, `${prefix}FeedSubsLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'feed_subs_processor.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/event-invoked')),
             environment: {
-                SUBSCRIPTIONS_TABLE: props.history.tableName,
+                // SUBSCRIPTIONS_TABLE: props.history.tableName, TODO: is this bug or not?
+                SUBSCRIPTIONS_TABLE: props.subscriptions.tableName,
                 QUEUE_URL: queue.queueUrl,
             }
         });
@@ -105,7 +109,7 @@ export class FeedStack extends cdk.Stack {
             retryAttempts: 10
         }));
 
-        const feedSync = new lambda.Function(this, 'FeedSyncLambda', {
+        const feedSync = new lambda.Function(this, `${prefix}FeedSyncLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'feed_sync.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/event-invoked')),
@@ -124,7 +128,7 @@ export class FeedStack extends cdk.Stack {
         queue.grantConsumeMessages(feedSync);
         props.feed.grantReadWriteData(feedSync);
 
-        const getFeed = new lambda.Function(this, 'GetFeedLambda', {
+        const getFeed = new lambda.Function(this, `${prefix}GetFeedLambda`, {
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: 'get_feed.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/metadata-endpoints')),
@@ -138,7 +142,7 @@ export class FeedStack extends cdk.Stack {
         props.metadata.grantReadData(getFeed);
 
         const getFeedIntegration = new HttpLambdaIntegration(
-            "GedFeed",
+            `${prefix}GetFeed`,
             getFeed
         );
         props.api.addRoutes({

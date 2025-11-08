@@ -80,9 +80,9 @@ exports.handler = async function (event) {
 
   const token = authHeader.split(' ')[1];
   const verifier = CognitoJwtVerifier.create({
-    userPoolId: 'eu-central-1_QCJqZH9gR',
+    userPoolId: process.env.USER_POOL_ID,
     tokenUse: 'access',
-    clientId: 'jnuaqlhr1kb416ikofua705iv',
+    clientId: process.env.CLIENT_ID,
   });
 
   let payload;

@@ -4,12 +4,22 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway'
 import * as iam from 'aws-cdk-lib/aws-iam'
 import { CognitoPool } from './cognito';
 
+export interface SecurityStackProps extends cdk.StackProps {
+    stageName?: string;
+}
+
 export class SecurityStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    public readonly cognitoPool: CognitoPool;
+
+    constructor(scope: Construct, id: string, props?: SecurityStackProps) {
         super(scope, id, props);
 
-        new CognitoPool(this, 'CognitoPool', {
-            stage: 'Beta',
+        const stageName = props?.stageName ? props.stageName : 'dev';
+
+        const cognitoPool = new CognitoPool(this, `${stageName}-CognitoPool`, {
+            stage: stageName
         });
+
+        this.cognitoPool = cognitoPool;
     }
 }
