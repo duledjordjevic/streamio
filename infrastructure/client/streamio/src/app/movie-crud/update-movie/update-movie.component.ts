@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MovieService } from '../service/movie-service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgxImageCompressService } from 'ngx-image-compress';
@@ -8,7 +8,7 @@ import { NgxImageCompressService } from 'ngx-image-compress';
   templateUrl: './update-movie.component.html',
   styleUrls: ['./update-movie.component.css']
 })
-export class UpdateMovieComponent {
+export class UpdateMovieComponent implements OnInit {
 
   movieName: string = "";
   resolution: string = "";

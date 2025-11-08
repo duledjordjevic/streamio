@@ -1,8 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { AuthService } from '../../auth/service/AuthService';
-import { FormControl, FormGroup } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Component } from '@angular/core';
 import { MovieService } from '../service/movie-service';
 import { v4 as uuidv4 } from 'uuid';
 import { Router } from '@angular/router';
@@ -13,7 +10,7 @@ import { NgxImageCompressService } from 'ngx-image-compress';
   templateUrl: './upload-movie.component.html',
   styleUrls: ['./upload-movie.component.css']
 })
-export class UploadMovieComponent implements OnInit{
+export class UploadMovieComponent{
 
   uploadUrl: string = "";
   isFileSelected: boolean = false;
@@ -41,14 +38,10 @@ export class UploadMovieComponent implements OnInit{
   predefinedGenres: string[] = ["Action", "Comedy", "Thriller", "Drama", "Horror", "Sci-Fi", "Romance", "Crime"];
 
   constructor(private http: HttpClient, 
-    private authService: AuthService,
     private movieService: MovieService,
     private router: Router,
     private imageCompress: NgxImageCompressService) {}
 
-  ngOnInit(): void {
-    
-  }
 
   onFileSelected(event: any) {
     const file: File = event.target.files[0];
@@ -244,7 +237,7 @@ export class UploadMovieComponent implements OnInit{
   }
 
   processList(inputList: string[]): string {
-    const uniqueSorted = [...new Set(inputList)].sort();
+    const uniqueSorted = [...new Set(inputList)].sort((a, b) => a.localeCompare(b));
   
     return uniqueSorted.join(',');
   }

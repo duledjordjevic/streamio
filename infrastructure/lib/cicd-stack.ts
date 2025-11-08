@@ -7,7 +7,6 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import path = require('path');
 

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/auth/service/AuthService';
 import { MovieService } from 'src/app/movie-crud/service/movie-service';
@@ -14,7 +14,7 @@ interface ToggleItem {
   templateUrl: './user-subscriptions.component.html',
   styleUrls: ['./user-subscriptions.component.css']
 })
-export class UserSubscriptionsComponent {
+export class UserSubscriptionsComponent implements OnInit{
 
   topics: ToggleItem[] = [];
   hasSubscription: boolean = false;

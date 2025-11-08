@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import {  MovieDB } from '../model/movie.model';
 import { MovieService } from 'src/app/movie-crud/service/movie-service';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup} from '@angular/forms';
 import { AuthService } from 'src/app/auth/service/AuthService';
 
 @Component({
@@ -9,7 +9,7 @@ import { AuthService } from 'src/app/auth/service/AuthService';
   templateUrl: './movie-feed.component.html',
   styleUrls: ['./movie-feed.component.css']
 })
-export class MovieFeedComponent {
+export class MovieFeedComponent implements OnInit {
 
   fb = inject(FormBuilder);
 
