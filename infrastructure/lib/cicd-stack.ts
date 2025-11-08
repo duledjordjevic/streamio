@@ -7,6 +7,7 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import path = require('path');
 
 export class CicdStack extends cdk.Stack {
@@ -69,6 +70,12 @@ export class CicdStack extends cdk.Stack {
             targets: [new targets.LambdaFunction(notifierFn)],
         });
 
+        const sonarToken = secretsmanager.Secret.fromSecretNameV2(
+            this, 
+            'SonarToken', 
+            'sonarqube-token'  
+        );
+
         const sonarQubeStep = new CodeBuildStep('SonarQube Analysis', {
             commands: [
                 // Install SonarQube Scanner
@@ -87,9 +94,14 @@ export class CicdStack extends cdk.Stack {
                 '-Dsonar.token=$SONAR_TOKEN'
             ],
             //  AWS Secrets Manager SONAR_TOKEN
-            env: {
-                SONAR_TOKEN: 'sonarqube-token' 
+            buildEnvironment: {
+                environmentVariables: {
+                    SONAR_TOKEN: {
+                        type: cdk.aws_codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER,
+                        value: sonarToken.secretArn  
+                    }
             }
+    }
         });
 
         const devStage = pipeline.addStage(new PipelineStage(this, 'PipelineDevStage', {
