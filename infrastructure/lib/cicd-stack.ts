@@ -18,7 +18,7 @@ export class CicdStack extends cdk.Stack {
         const pipeline = new CodePipeline(this, 'Pipeline', {
             pipelineName: 'Pipeline',
             synth: new ShellStep('Synth', {
-                input: CodePipelineSource.gitHub('duledjordjevic/streamio', 'diplomski'),
+                input: CodePipelineSource.gitHub('duledjordjevic/streamio', 'develop'),
                 commands: [
                     'cd infrastructure',
                     'npm ci',
