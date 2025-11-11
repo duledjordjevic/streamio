@@ -129,9 +129,9 @@ export class CicdStack extends cdk.Stack {
                 '-Dsonar.organization=duledjordjevic ' +
                 '-Dsonar.sources=. ' +
                 '-Dsonar.host.url=https://sonarcloud.io ' +
-                '-Dsonar.token=$SONAR_TOKEN ' +
-                '-Dsonar.qualitygate.wait=true ' +
-                '-Dsonar.ws.timeout=300'
+                '-Dsonar.token=$SONAR_TOKEN '
+                // '-Dsonar.qualitygate.wait=true ' +
+                // '-Dsonar.ws.timeout=300'
             ],
             //  AWS Secrets Manager SONAR_TOKEN
             buildEnvironment: {
@@ -160,15 +160,15 @@ export class CicdStack extends cdk.Stack {
             ]
         }));
 
-        // const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
-        //     stageName: 'qa'
-        // }));
-        // qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
+        const qaStage = pipeline.addStage(new PipelineStage(this, 'PipelineQAStage', {
+            stageName: 'qa'
+        }));
+        qaStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveQA'));
 
-        // const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
-        //     stageName: 'prod'
-        // }));
-        // prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
+        const prodStage = pipeline.addStage(new PipelineStage(this, 'PipelineProdStage', {
+            stageName: 'prod'
+        }));
+        prodStage.addPre(new cdk.pipelines.ManualApprovalStep('ApproveProd'));
        
     }
 }
