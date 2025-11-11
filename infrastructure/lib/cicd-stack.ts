@@ -28,17 +28,16 @@ export class CicdStack extends cdk.Stack {
             })
         })
 
-        const target = new chatbot.SlackChannelConfiguration(this, 'MySlackChannel', {
-            slackChannelConfigurationName: 'Streamio',
-            slackWorkspaceId: 'T09S3PVRSVC',
-            slackChannelId: 'C09S9CFJF5J',
-        });
-
-        pipeline.pipeline.notifyOnExecutionStateChange('NotifyOnExecutionStateChange', target);
-
         const notifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
             displayName: 'Pipeline notifications (streamio)',
             topicName: 'streamio-pipeline-notifications',
+        });
+        
+        new chatbot.SlackChannelConfiguration(this, 'MySlackChannel', {
+            slackChannelConfigurationName: 'Streamio',
+            slackWorkspaceId: 'T09S3PVRSVC',
+            slackChannelId: 'C09S9CFJF5J',
+            notificationTopics: [notifyTopic]
         });
 
         notifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
