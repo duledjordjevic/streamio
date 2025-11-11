@@ -33,34 +33,36 @@ export class CicdStack extends cdk.Stack {
             displayName: 'Pipeline Slack notifications (streamio)',
             topicName: 'streamio-pipeline-slack-notifications',
         });
+
+         const slackWebhookUrl = secretsmanager.Secret.fromSecretNameV2(
+            this, 
+            'slackWebhookUrl', 
+            'slack-webhook-url'  
+        );
         
-        new chatbot.SlackChannelConfiguration(this, 'MySlackChannel', {
-            slackChannelConfigurationName: 'Streamio',
-            slackWorkspaceId: 'T09S3PVRSVC',
-            slackChannelId: 'C09S9CFJF5J',
-            notificationTopics: [slackNotifyTopic]
+        const slackNotifier = new lambda.Function(this, 'SlackNotifier', {
+            runtime: lambda.Runtime.PYTHON_3_11,
+            handler: 'cicd-slack-notifier.handler',
+            timeout: cdk.Duration.seconds(20),
+            code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/event-invoked')),
+            environment: {
+                SLACK_WEBHOOK_URL: slackWebhookUrl.secretValue.unsafeUnwrap()
+            }
+            
         });
 
-        new events.Rule(this, 'PipelineFailedSlack', {
+        slackWebhookUrl.grantRead(slackNotifier);
+
+        new events.Rule(this, 'PipelineSlackNotifications', {
             eventPattern: {
                 source: ['aws.codepipeline'],
                 detailType: ['CodePipeline Pipeline Execution State Change'],
                 detail: {
-                    state: ['FAILED'],
+                    state: ['FAILED', 'SUCCEEDED', 'STARTED'],
                     pipeline: ['Pipeline']
                 }
             },
-            targets: [
-                new targets.SnsTopic(slackNotifyTopic, {
-                    message: events.RuleTargetInput.fromText(
-                        `🚨 Pipeline FAILED\n` +
-                        `Pipeline: ${events.EventField.fromPath('$.detail.pipeline')}\n` +
-                        `Execution: ${events.EventField.fromPath('$.detail.execution-id')}\n` +
-                        `Time: ${events.EventField.fromPath('$.time')}\n` +
-                        `Region: ${events.EventField.fromPath('$.region')}`
-                    )
-                })
-            ]
+            targets: [new targets.LambdaFunction(slackNotifier)]
         });
 
         const emailNotifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
