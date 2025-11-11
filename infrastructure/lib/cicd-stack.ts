@@ -32,12 +32,17 @@ export class CicdStack extends cdk.Stack {
             displayName: 'Pipeline notifications (streamio)',
             topicName: 'streamio-pipeline-notifications',
         });
+
+        const slackNotifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
+            displayName: 'Pipeline Slack notifications (streamio)',
+            topicName: 'streamio-pipeline-slack-notifications',
+        });
         
         new chatbot.SlackChannelConfiguration(this, 'MySlackChannel', {
             slackChannelConfigurationName: 'Streamio',
             slackWorkspaceId: 'T09S3PVRSVC',
             slackChannelId: 'C09S9CFJF5J',
-            notificationTopics: [notifyTopic]
+            notificationTopics: [slackNotifyTopic]
         });
 
         notifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
@@ -63,7 +68,7 @@ export class CicdStack extends cdk.Stack {
                     pipeline: ['Pipeline'],              
                 },
             },
-            targets: [new targets.LambdaFunction(notifierFn)],
+            targets: [new targets.LambdaFunction(notifierFn), new targets.SnsTopic(slackNotifyTopic)],
         });
 
         new events.Rule(this, 'CodeBuildFailedRule', {
@@ -75,7 +80,7 @@ export class CicdStack extends cdk.Stack {
                     'build-status': ['FAILED']
                 },
             },
-            targets: [new targets.LambdaFunction(notifierFn)],
+            targets: [new targets.LambdaFunction(notifierFn), new targets.SnsTopic(slackNotifyTopic)],
         });
 
         const sonarToken = secretsmanager.Secret.fromSecretNameV2(
