@@ -85,7 +85,7 @@ export class CicdStack extends cdk.Stack {
                     pipeline: ['Pipeline'],              
                 },
             },
-            targets: [new targets.LambdaFunction(notifierFn)],
+            targets: [new targets.LambdaFunction(notifierFn), new targets.SnsTopic(slackNotifyTopic)],
         });
 
         new events.Rule(this, 'CodeBuildFailedRule', {
