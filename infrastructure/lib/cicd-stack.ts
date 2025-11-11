@@ -33,7 +33,7 @@ export class CicdStack extends cdk.Stack {
             topicName: 'streamio-pipeline-notifications',
         });
 
-        const slackNotifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
+        const slackNotifyTopic = new sns.Topic(this, 'PipelineSlackNotificationsTopic', {
             displayName: 'Pipeline Slack notifications (streamio)',
             topicName: 'streamio-pipeline-slack-notifications',
         });
