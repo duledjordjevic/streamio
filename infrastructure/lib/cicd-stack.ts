@@ -9,6 +9,7 @@ import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import path = require('path');
+import * as chatbot from 'aws-cdk-lib/aws-chatbot';
 
 export class CicdStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -26,6 +27,14 @@ export class CicdStack extends cdk.Stack {
                 primaryOutputDirectory: 'infrastructure/cdk.out'
             })
         })
+
+        const target = new chatbot.SlackChannelConfiguration(this, 'MySlackChannel', {
+            slackChannelConfigurationName: 'Streamio',
+            slackWorkspaceId: 'T09S3PVRSVC',
+            slackChannelId: 'C09S9CFJF5J',
+        });
+
+        pipeline.pipeline.notifyOnExecutionStateChange('NotifyOnExecutionStateChange', target);
 
         const notifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
             displayName: 'Pipeline notifications (streamio)',
