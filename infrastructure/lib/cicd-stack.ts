@@ -7,8 +7,6 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as chatbot from 'aws-cdk-lib/aws-chatbot';
 import path = require('path');
@@ -30,10 +28,6 @@ export class CicdStack extends cdk.Stack {
             })
         })
 
-        const notifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
-            displayName: 'Pipeline notifications (streamio)',
-            topicName: 'streamio-pipeline-notifications',
-        });
 
         const slackNotifyTopic = new sns.Topic(this, 'PipelineSlackNotificationsTopic', {
             displayName: 'Pipeline Slack notifications (streamio)',
@@ -47,33 +41,45 @@ export class CicdStack extends cdk.Stack {
             notificationTopics: [slackNotifyTopic]
         });
 
-        const pipelineFailedAlarm = new cloudwatch.Alarm(this, 'PipelineFailedAlarm', {
-            metric: new cloudwatch.Metric({
-                namespace: 'AWS/CodePipeline',
-                metricName: 'PipelineExecutionFailed',
-                dimensionsMap: { PipelineName: 'Pipeline' },
-                statistic: 'Sum',
-                period: cdk.Duration.minutes(1),
-            }),
-            threshold: 1, 
-            evaluationPeriods: 1,
-            alarmDescription: 'Pipline failed alarm',
+        new events.Rule(this, 'PipelineFailedSlack', {
+            eventPattern: {
+                source: ['aws.codepipeline'],
+                detailType: ['CodePipeline Pipeline Execution State Change'],
+                detail: {
+                    state: ['FAILED'],
+                    pipeline: ['Pipeline']
+                }
+            },
+            targets: [
+                new targets.SnsTopic(slackNotifyTopic, {
+                    message: events.RuleTargetInput.fromText(
+                        `🚨 Pipeline FAILED\n` +
+                        `Pipeline: ${events.EventField.fromPath('$.detail.pipeline')}\n` +
+                        `Execution: ${events.EventField.fromPath('$.detail.execution-id')}\n` +
+                        `Time: ${events.EventField.fromPath('$.time')}\n` +
+                        `Region: ${events.EventField.fromPath('$.region')}`
+                    )
+                })
+            ]
         });
 
-        pipelineFailedAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(slackNotifyTopic));
+        const emailNotifyTopic = new sns.Topic(this, 'PipelineNotificationsTopic', {
+            displayName: 'Pipeline notifications (streamio)',
+            topicName: 'streamio-pipeline-notifications',
+        });
 
-        notifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
+        emailNotifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
 
         const notifierFn = new lambda.Function(this, "NotifierFn", {
             runtime: lambda.Runtime.PYTHON_3_11,
             handler: 'cicd-notifier.handler',
             code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/event-invoked')),
             environment: {
-                TARGET_TOPIC: notifyTopic.topicArn
+                TARGET_TOPIC: emailNotifyTopic.topicArn
             }
         });
 
-        notifyTopic.grantPublish(notifierFn);
+        emailNotifyTopic.grantPublish(notifierFn);
 
         new events.Rule(this, 'CodePipelineFailedRule', {
             description: 'Notify on failed pipeline executions',
@@ -85,7 +91,7 @@ export class CicdStack extends cdk.Stack {
                     pipeline: ['Pipeline'],              
                 },
             },
-            targets: [new targets.LambdaFunction(notifierFn), new targets.SnsTopic(slackNotifyTopic)],
+            targets: [new targets.LambdaFunction(notifierFn)],
         });
 
         new events.Rule(this, 'CodeBuildFailedRule', {
