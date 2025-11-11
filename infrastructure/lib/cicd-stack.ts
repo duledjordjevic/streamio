@@ -7,9 +7,11 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import path = require('path');
 import * as chatbot from 'aws-cdk-lib/aws-chatbot';
+import path = require('path');
 
 export class CicdStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -45,6 +47,21 @@ export class CicdStack extends cdk.Stack {
             notificationTopics: [slackNotifyTopic]
         });
 
+        const pipelineFailedAlarm = new cloudwatch.Alarm(this, 'PipelineFailedAlarm', {
+            metric: new cloudwatch.Metric({
+                namespace: 'AWS/CodePipeline',
+                metricName: 'PipelineExecutionFailed',
+                dimensionsMap: { PipelineName: 'Pipeline' },
+                statistic: 'Sum',
+                period: cdk.Duration.minutes(1),
+            }),
+            threshold: 1, 
+            evaluationPeriods: 1,
+            alarmDescription: 'Pipline failed alarm',
+        });
+
+        pipelineFailedAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(slackNotifyTopic));
+
         notifyTopic.addSubscription(new subs.EmailSubscription('djordjevicdusan24@gmail.com'));
 
         const notifierFn = new lambda.Function(this, "NotifierFn", {
@@ -68,7 +85,7 @@ export class CicdStack extends cdk.Stack {
                     pipeline: ['Pipeline'],              
                 },
             },
-            targets: [new targets.LambdaFunction(notifierFn), new targets.SnsTopic(slackNotifyTopic)],
+            targets: [new targets.LambdaFunction(notifierFn)],
         });
 
         new events.Rule(this, 'CodeBuildFailedRule', {
@@ -80,7 +97,7 @@ export class CicdStack extends cdk.Stack {
                     'build-status': ['FAILED']
                 },
             },
-            targets: [new targets.LambdaFunction(notifierFn), new targets.SnsTopic(slackNotifyTopic)],
+            targets: [new targets.LambdaFunction(notifierFn)],
         });
 
         const sonarToken = secretsmanager.Secret.fromSecretNameV2(
